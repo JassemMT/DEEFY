@@ -17,6 +17,8 @@ class AudioTrack {
         $this->genre = "";
     }
 
+    
+
     public function __toString(): string {
         return json_encode(get_object_vars($this));
     }

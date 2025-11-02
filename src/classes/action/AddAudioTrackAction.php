@@ -23,7 +23,7 @@ class AddAudioTrackAction extends Action
             $rawTitle      = $_POST['title'] ?? '';
             $rawGenre      = $_POST['genre'] ?? '';
             $rawDuration   = $_POST['duration'] ?? '';
-            $rawSrc        = $_POST['src'] ?? '';
+            //$rawSrc        = $_POST['src'] ?? '';
             $rawArtiste    = $_POST['artiste'] ?? '';
             $rawAlbum      = $_POST['album'] ?? '';
             $rawAnnee      = $_POST['annee'] ?? '';
@@ -32,7 +32,7 @@ class AddAudioTrackAction extends Action
             $title    = trim(filter_var((string)$rawTitle, FILTER_SANITIZE_SPECIAL_CHARS));
             $genre    = trim(filter_var((string)$rawGenre, FILTER_SANITIZE_SPECIAL_CHARS));
             $duration = (int) trim(filter_var((string)$rawDuration, FILTER_SANITIZE_SPECIAL_CHARS));
-            $src      = trim(filter_var((string)$rawSrc, FILTER_SANITIZE_URL));
+            //$src      = trim(filter_var((string)$rawSrc, FILTER_SANITIZE_URL));
 
             $artiste      = trim(filter_var((string)$rawArtiste, FILTER_SANITIZE_SPECIAL_CHARS));
             $album        = trim(filter_var((string)$rawAlbum, FILTER_SANITIZE_SPECIAL_CHARS));

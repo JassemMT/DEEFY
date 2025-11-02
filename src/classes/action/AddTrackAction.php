@@ -18,7 +18,9 @@ class AddTrackAction extends Action
     {
         AuthnProvider::requireLogin();
 
-        if (!isset($_SESSION['playlist'])) {
+       
+
+        if (!isset($_SESSION['playlist']) || $_SESSION['playlist'] <= 0) {
             return '<p>Aucune playlist courante.</p><p><a href="?action=add-playlist">Créer une playlist</a></p>';
         }
 

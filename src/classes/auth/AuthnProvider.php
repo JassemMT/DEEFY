@@ -31,7 +31,7 @@ class AuthnProvider {
         ];
 
         $_SESSION['playlist'] = -1;
-
+        
     }
 
     public static function getSignedInUser(): array {

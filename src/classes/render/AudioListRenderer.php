@@ -7,7 +7,7 @@ class AudioListRenderer implements Renderer {
     protected AudioList $list;
 
     // Chemin Absolu Confirmé : /dev_php/DEEFY-main/DEEFY-main/audio/
-    private const AUDIO_BASE_PATH = '/dev_php/DEEFY-main/DEEFY-main/audio/'; 
+    private const AUDIO_BASE_PATH = '/audio/'; 
 
     public function __construct(AudioList $list) {
         $this->list = $list;

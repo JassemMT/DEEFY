@@ -1,5 +1,7 @@
 <?php
 namespace iutnc\deefy\audio\tracks;
+use iutnc\deefy\exception\InvalidPropertyNameException;
+use iutnc\deefy\exception\InvalidPropertyValueException;
 
 class AlbumTrack extends AudioTrack {
     protected string $artiste;
@@ -7,7 +9,7 @@ class AlbumTrack extends AudioTrack {
     protected int $annee;
     protected int $numero_piste;
 
-    public function __construct(string $titre, string $filename, string $album, int $numero_piste) {
+    public function __construct(string $titre, string $filename, string $album, int $numero_piste, string $artiste = "", int $annee = 0) {
         parent::__construct($titre, $filename);
         $this->album = $album;
         $this->numero_piste = $numero_piste;

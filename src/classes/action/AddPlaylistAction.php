@@ -26,8 +26,7 @@ class AddPlaylistAction extends Action
 
             $playlistId = $repo->savePlaylist($pl, (int)$uid);
 
-            // On ne garde que l’id en session
-            $_SESSION['playlist'] = $playlistId;
+            
 
             return '<p>Playlist créée.</p><p><a href="?action=add-track">Ajouter une piste</a></p>';
         }

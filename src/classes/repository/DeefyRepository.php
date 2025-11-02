@@ -89,7 +89,10 @@ class DeefyRepository{
                 if ($data['type'] === 'album') {
                     $track = new \iutnc\deefy\audio\tracks\AlbumTrack(
                         $data['titre'],
-                        $data['filename']);
+                        $data['filename'],
+                        $data['titre_album'],
+                        $data['numero_album']
+                    );
 
                         /*
                         protected string $genre;
@@ -103,9 +106,7 @@ class DeefyRepository{
                         $track->genre = $data['genre'];
                         $track->duree = (int) ($data['duree']);
                         $track->artiste = $data['artiste_album'];
-                        $track->album = $data['titre_album'];
                         $track->annee = (int) ($data['annee_album']);
-                        $track->numero_piste = (int) ($data['numero_album']);                
                         
                 
                 }elseif ($data['type'] === 'podcast') {
@@ -168,7 +169,7 @@ class DeefyRepository{
         $stmt = $this->pdo->prepare("INSERT INTO user2playlist (id_user, id_pl) VALUES (:id_user, :id_pl)");
         $stmt->execute(['id_user' => $id_user, 'id_pl' => $id_playlist]);
 
-        $_SESSION['playlist'] = $id_playlist;
+        $_SESSION['playlist'] = (int) $id_playlist;
     }
 
     /**

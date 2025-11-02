@@ -31,7 +31,7 @@ CREATE TABLE `track` (
   `annee_album` int(4) DEFAULT NULL,
   `numero_album` int(11) DEFAULT NULL,
   `auteur_podcast` varchar(100) DEFAULT NULL,
-  `date_posdcast` date DEFAULT NULL,
+  `date_podcast` date DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

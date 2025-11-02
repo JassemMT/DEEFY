@@ -27,111 +27,95 @@ class AddPodcastTrackAction extends Action
     public function execute(): string
     {
         \iutnc\deefy\auth\AuthnProvider::requireLogin();
-        $repo = \iutnc\deefy\repository\DeefyRepository::getInstance();
 
-        $html = '';
-
-        // POST : traitement du formulaire -> création de la piste, ajout à la playlist en session et affichage
-        if (($this->http_method ?? $_SERVER['REQUEST_METHOD']) === 'POST') {
-            // Récupération et nettoyage des champs
-            $rawTitle   = $_POST['title'] ?? '';
-            $rawAuthor  = $_POST['author'] ?? '';
-            $rawDuration = $_POST['duration'] ?? '';
-
-            $title  = trim(filter_var((string)$rawTitle, FILTER_SANITIZE_SPECIAL_CHARS));
-            $author = trim(filter_var((string)$rawAuthor, FILTER_SANITIZE_SPECIAL_CHARS));
-            $duration = (int) $rawDuration;
-
-            if ($title === '') {
-                return '<p>Titre invalide.</p>' . $this->formulaire_ajout_piste();
-            }
-
-            // gestion de l'upload (optionnel) : input name = userfile
-            $src = trim(filter_var((string)($_POST['src'] ?? ''), FILTER_SANITIZE_URL)); // par défaut si aucun upload
-
-            if (isset($_FILES['userfile']) && isset($_FILES['userfile']['error']) && $_FILES['userfile']['error'] === UPLOAD_ERR_OK) {
-                $originalName = $_FILES['userfile']['name'];
-                $tmpName = $_FILES['userfile']['tmp_name'];
-                $mimeType = $_FILES['userfile']['type'] ?? '';
-                $origLower = strtolower((string)$originalName);
-
-                // vérifications simples demandées
-                $hasMp3Ext = substr($origLower, -4) === '.mp3';
-                $isAudioMpeg = $mimeType === 'audio/mpeg';
-
-                // interdiction d'uploader un .php (vérifier extension)
-                $origExt = strtolower(pathinfo($originalName, PATHINFO_EXTENSION) ?? '');
-                if ($origExt === 'php') {
-                    return '<p>Type de fichier non autorisé.</p>' . $this->formulaire_ajout_piste();
-                }
-
-                if (! $hasMp3Ext || ! $isAudioMpeg) {
-                    return '<p>Fichier invalide : seul le MP3 est accepté.</p>' . $this->formulaire_ajout_piste();
-                }
-
-                // préparer dossier cible /audio à la racine du projet
-                $projectRoot = dirname(__DIR__, 3);
-                $audioDir = $projectRoot . DIRECTORY_SEPARATOR . 'audio';
-                if (!is_dir($audioDir)) {
-                    // tenter de créer le dossier si absent
-                    @mkdir($audioDir, 0755, true);
-                }
-
-                // nom aléatoire
-                try {
-                    $random = bin2hex(random_bytes(16));
-                } catch (\Throwable $e) {
-                    $random = uniqid('', true);
-                }
-                $targetFilename = $random . '.mp3';
-                $targetPath = $audioDir . DIRECTORY_SEPARATOR . $targetFilename;
-
-                // déplacer le fichier uploadé
-                if (!move_uploaded_file($tmpName, $targetPath)) {
-                    return '<p>Erreur lors de l\'upload du fichier.</p>' . $this->formulaire_ajout_piste();
-                }
-
-                // src utilisé par la piste (chemin relatif web)
-                $src = '../audio/' . $targetFilename;
-            }
-
-            // Instanciation de la piste (signature : title, author, duration, src)
-            $track = new PodcastTrack($title, $author, $duration, $src);
-
-            if (session_status() !== PHP_SESSION_ACTIVE) {
-                session_start();
-            }
-
-            
-           
-
-            if (session_status() !== PHP_SESSION_ACTIVE) {
-                session_start();
-            }
-
-
-            $playlist = $_SESSION['playlist'] ?? null;
-
-            if ($playlist == null) {
-                return '<p>Aucune playlist trouvée. Créez une playlist avant d’ajouter des pistes.</p>';
-            }
-            
-            $repo=DeefyRepository::getInstance();
-
-            $this->save_database($track);
-            
-            $html .= (new AudioListRenderer($repo->findPlaylistById($playlist)))->render();
-            $html .= '<p><a href="?action=add-track">Ajouter encore une piste</a></p>';
-
-            return $html;
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+            return $this->formulaire_ajout_podcast();
         }
 
-        // Sinon : afficher le formulaire d'ajout de piste
-        $html .= $this->formulaire_ajout_piste();
-        return $html;
+        $title   = trim((string)($_POST['title'] ?? ''));
+        $genre   = trim((string)($_POST['genre'] ?? ''));
+        $durationRaw = trim((string)($_POST['duration'] ?? '')); // peut être "mm:ss" ou secondes
+        $auteur  = trim((string)($_POST['auteur'] ?? ''));
+        $date    = trim((string)($_POST['date'] ?? ''));
+        $playlistId = (int)($_SESSION['playlist'] ?? 0);
+
+        if ($title === '') {
+            return '<p>Titre invalide.</p>' . $this->formulaire_ajout_podcast();
+        }
+        if ($playlistId <= 0) {
+            return '<p>Aucune playlist cible.</p>' . $this->formulaire_ajout_podcast();
+        }
+
+        // Upload du fichier (src -> filename)
+        $src = '';
+        if (isset($_FILES['userfile']) && ($_FILES['userfile']['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+            $originalName = (string)$_FILES['userfile']['name'];
+            $tmpName = (string)$_FILES['userfile']['tmp_name'];
+            $mimeType = (string)($_FILES['userfile']['type'] ?? '');
+            $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+
+            if ($ext !== 'mp3' || ($mimeType !== '' && $mimeType !== 'audio/mpeg')) {
+                return '<p>Fichier invalide : seul le MP3 est accepté.</p>' . $this->formulaire_ajout_podcast();
+            }
+
+            $projectRoot = dirname(__DIR__, 3);
+            $audioDir = $projectRoot . DIRECTORY_SEPARATOR . 'audio';
+            if (!is_dir($audioDir)) {
+                @mkdir($audioDir, 0755, true);
+            }
+
+            try { $basename = bin2hex(random_bytes(16)); } catch (\Throwable) { $basename = uniqid('', true); }
+            $targetFilename = $basename . '.mp3';
+            $targetPath = $audioDir . DIRECTORY_SEPARATOR . $targetFilename;
+
+            if (!move_uploaded_file($tmpName, $targetPath)) {
+                return '<p>Erreur lors de l’upload du fichier.</p>' . $this->formulaire_ajout_podcast();
+            }
+            $src = $targetFilename;
+        } else {
+            return '<p>Aucun fichier uploadé.</p>' . $this->formulaire_ajout_podcast();
+        }
+
+        // Parse durée (accept mm:ss ou secondes)
+        $duration = 0;
+        if ($durationRaw !== '') {
+            if (preg_match('/^(\d+):([0-5]\d)(?::([0-5]\d))?$/', $durationRaw, $m)) {
+                $h = isset($m[3]) ? (int)$m[1] : 0;
+                $m2 = isset($m[3]) ? (int)$m[2] : (int)$m[1];
+                $s = isset($m[3]) ? (int)$m[3] : (int)$m[2];
+                $duration = $h ? ($h*3600 + $m2*60 + $s) : ($m2*60 + $s);
+            } elseif (ctype_digit($durationRaw)) {
+                $duration = (int)$durationRaw;
+            }
+        }
+
+        // Création de la PodcastTrack: constructeur (titre, filename) puis setters magiques
+        $track = new \iutnc\deefy\audio\tracks\PodcastTrack($title, $src);
+        if ($genre !== '')   { $track->genre = $genre; }
+        if ($duration >= 0)  { $track->duree = $duration; }
+        if ($auteur !== '')  { $track->auteur = $auteur; }
+        if ($date !== '')    { $track->date = $date; }
+
+        try {
+            $repo = \iutnc\deefy\repository\DeefyRepository::getInstance();
+            // Enregistrer la piste et la lier à la playlist
+            // Adapte cette ligne au prototype réel (ex: saveTrack($track, $playlistId))
+            $this->save_database($track);
+
+            // Recharger et afficher la playlist
+            $pl = $repo->findPlaylistById($playlistId);
+            if (!$pl) return '<p>Playlist introuvable après ajout.</p>';
+
+            return (new \iutnc\deefy\render\AudioListRenderer($pl))->render()
+                 . '<p><a href="?action=add-podcast-track&id=' . $playlistId . '">Ajouter un autre podcast</a></p>';
+
+        } catch (\Throwable $e) {
+            return '<p>Erreur lors de l’enregistrement: ' . htmlspecialchars($e->getMessage()) . '</p>'
+                 . $this->formulaire_ajout_podcast();
+        }
     }
 
-    public function formulaire_ajout_piste(): string
+    public function formulaire_ajout_podcast(): string
     {
         $html = '<form method="post" enctype="multipart/form-data">
                     <label>Titre : <input type="text" name="title" required></label><br>
@@ -140,6 +124,19 @@ class AddPodcastTrackAction extends Action
                     <label>Fichier audio (MP3) : <input type="file" name="userfile" accept=".mp3,audio/mpeg"></label><br>
                     <button type="submit">Ajouter la piste</button>
                  </form>';
+
+                 /*
+
+                 constructeur :
+                    protected string $titre;
+                    protected string $filename;
+
+                setter magiques :
+                    protected string $genre;
+                    protected int $duree;
+                    protected string $auteur;
+                    protected string $date;
+                */
 
         return $html;
     }
