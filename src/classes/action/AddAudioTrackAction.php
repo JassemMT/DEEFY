@@ -39,10 +39,32 @@ class AddAudioTrackAction extends Action
             $annee        = filter_var($rawAnnee, FILTER_VALIDATE_INT);
             $numero_piste = filter_var($rawNumero, FILTER_VALIDATE_INT);
 
+
+            /*
+                    title correspond à AudioTrack->titre
+                    genre correspond à AudioTrack->genre
+                    duration correspond à AudioTrack->duree
+                    src correspond à AudioTrack->filename --Celui-ci est géré par l'upload de fichier
+                    artiste correspond à AlbumTrack->artiste
+                    album correspond à AlbumTrack->album
+                    annee correspond à AlbumTrack->annee
+                    numero_piste correspond à AlbumTrack->numero_piste
+
+
+                    title et src sont dans le constructeur obligatoire d'AudioTrack
+                  
+                    genre et duree sont determinés avec le setter magique d'AudioTrack
+                    
+                    artiste, album, annee, numero_piste sont determinés avec le setter magique d'AlbumTrack
+
+                 */
+
+
             if ($title === '') {
                 return '<p>Titre invalide.</p>' . $this->formulaire_ajout_piste();
             }
 
+            // Gestion upload fichier
             if (isset($_FILES['userfile']) && isset($_FILES['userfile']['error']) && $_FILES['userfile']['error'] === UPLOAD_ERR_OK) {
                 $originalName = $_FILES['userfile']['name'];
                 $tmpName = $_FILES['userfile']['tmp_name'];
@@ -79,31 +101,27 @@ class AddAudioTrackAction extends Action
                     return '<p>Erreur lors de l\'upload du fichier.</p>' . $this->formulaire_ajout_piste();
                 }
 
-                $src = 'audio/' . $targetFilename;
+                $src = $targetFilename;
             }
 
             // Si l'un des champs album/artiste/annee/numero est renseigné -> AlbumTrack
             $isAlbum = $album !== '' || $artiste !== '' || $annee !== false || $numero_piste !== false;
 
             if ($isAlbum) {
-                // album et numero exigés par le constructeur ; fournir des valeurs par défaut si manquantes
+                // Valeurs par défaut pour constructeur AlbumTrack
                 $albumForCtor = $album !== '' ? $album : 'unknown';
                 $numeroForCtor = ($numero_piste !== false && $numero_piste !== null) ? (int)$numero_piste : 0;
 
-                $track = new AlbumTrack($title, $src, $albumForCtor, $numeroForCtor);
+                // Constructeur AlbumTrack: titre, filename, album, numero_piste
+                $track = new AlbumTrack($title, $src, $albumForCtor, $numeroForCtor, $artiste, $annee);
 
-                // affecter artiste et annee si fournis
-                if ($artiste !== '') {
-                    $track->artiste = $artiste;
-                }
-                if ($annee !== false && $annee !== null) {
-                    $track->annee = (int)$annee;
-                }
+                
             } else {
+                // Constructeur AudioTrack: titre, filename
                 $track = new AudioTrack($title, $src);
             }
 
-            // affecter genre et durée
+            // Setter magique pour genre et durée (hérité dans AlbumTrack)
             if ($genre !== '') {
                 $track->genre = $genre;
             }
@@ -116,13 +134,12 @@ class AddAudioTrackAction extends Action
             $playlist = $_SESSION['playlist'] ?? null;
 
             if ($playlist == null) {
-                return '<p>Aucune playlist trouvée. Créez une playlist avant d’ajouter des pistes.</p>';
+                return '<p>Aucune playlist trouvée. Créez une playlist avant d\'ajouter des pistes.</p>';
             }
 
             $_SESSION['playlist'] = $playlist;
 
-            $repo=DeefyRepository::getInstance();
-
+            $repo = DeefyRepository::getInstance();
             $this->save_database($track);
             
             $html .= (new AudioListRenderer($repo->findPlaylistById($playlist)))->render();
@@ -153,6 +170,18 @@ class AddAudioTrackAction extends Action
                     <label>Fichier audio (MP3) : <input type="file" name="userfile" accept=".mp3,audio/mpeg"></label><br>
                     <button type="submit">Ajouter la piste</button>
                  </form>';
+
+
+                 /*
+                    title correspond à AudioTrack->titre
+                    genre correspond à AudioTrack->genre
+                    duration correspond à AudioTrack->duree
+                    src correspond à AudioTrack->filename --Celui-ci est géré par l'upload de fichier
+                    artiste correspond à AlbumTrack->artiste
+                    album correspond à AlbumTrack->album
+                    annee correspond à AlbumTrack->annee
+                    numero_piste correspond à AlbumTrack->numero_piste
+                 */
 
         return $html;
     }
