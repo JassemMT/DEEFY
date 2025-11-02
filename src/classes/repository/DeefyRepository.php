@@ -71,7 +71,7 @@ class DeefyRepository{
         }
     }
 
-    public function findAllTracksByIdPlaylist( int $id_playlist, ?bool $objet = false ): array {
+  public function findAllTracksByIdPlaylist( int $id_playlist, ?bool $objet = false ): array {
         $stmt = $this->pdo->prepare("SELECT t.* FROM track t
             JOIN playlist2track pt ON t.id = pt.id_track
             WHERE pt.id_pl = :id_pl
@@ -89,30 +89,61 @@ class DeefyRepository{
                 if ($data['type'] === 'album') {
                     $track = new \iutnc\deefy\audio\tracks\AlbumTrack(
                         $data['titre'],
-                        $data['duree'],
-                        $data['genre'],
-                        $data['filename'],
-                        $data['artiste_album'],
-                        $data['titre_album'],
-                        $data['annee_album'],
-                        $data['numero_album']
-                    );
-                } elseif ($data['type'] === 'podcast') {
+                        $data['filename']);
+
+                        /*
+                        protected string $genre;
+                        protected int $duree;
+                        protected string $artiste;
+
+                        protected string $album;
+                        protected int $annee;
+                        protected int $numero_piste;
+                    */
+                        $track->genre = $data['genre'];
+                        $track->duree = (int) ($data['duree']);
+                        $track->artiste = $data['artiste_album'];
+                        $track->album = $data['titre_album'];
+                        $track->annee = (int) ($data['annee_album']);
+                        $track->numero_piste = (int) ($data['numero_album']);                
+                        
+                
+                }elseif ($data['type'] === 'podcast') {
                     $track = new \iutnc\deefy\audio\tracks\PodcastTrack(
                         $data['titre'],
-                        $data['duree'],
-                        $data['genre'],
-                        $data['filename'],
-                        $data['auteur_podcast'],
-                        $data['date_podcast']
-                    );
+                        $data['filename']);
+                    
+
+                    /*
+                    Ajouter avec des setters
+
+                        protected string $genre;
+                        protected int $duree;
+
+                        protected string $auteur;
+                        protected string $date;
+                    */
+                    $track->genre = $data['genre'];
+                    $track->duree = (int) ($data['duree']);
+                    $track->auteur = $data['auteur_podcast'];
+                    $track->date = $data['date_podcast'];
+
+
+                    
                 } else {
                     $track = new \iutnc\deefy\audio\tracks\AudioTrack(
                         $data['titre'],
-                        $data['duree'],
-                        $data['genre'],
                         $data['filename']
                     );
+
+                       /*
+                        
+                        protected string $genre;
+                        protected int $duree;
+                        
+                    */
+                    $track->genre = $data['genre'];
+                    $track->duree = (int) ($data['duree']);
                 }
                 $tracks[] = $track;
             }
@@ -130,13 +161,14 @@ class DeefyRepository{
         //fetch le id automatique de la ligne insérée dans $id_playlist
         $id_playlist = $this->pdo->lastInsertId();
 
-        //On garde en session la playlist courante
-        $_SESSION['playlist_id'] = $id_playlist;
+       
 
         echo "Playlist saved with ID: " . $id_playlist;
 
         $stmt = $this->pdo->prepare("INSERT INTO user2playlist (id_user, id_pl) VALUES (:id_user, :id_pl)");
         $stmt->execute(['id_user' => $id_user, 'id_pl' => $id_playlist]);
+
+        $_SESSION['playlist'] = $id_playlist;
     }
 
     /**
@@ -212,6 +244,9 @@ class DeefyRepository{
             $stmt3 = $this->pdo->prepare("UPDATE playlist2track SET no_piste_dans_liste = (SELECT COUNT(*) FROM playlist2track WHERE id_pl = :id_pl) WHERE id_pl = :id_pl AND id_track = :id_track");
             $stmt3->execute(['id_pl' => $id_playlist, 'id_track' => $id_track]);
         }
+
+        $_SESSION['playlist'] = $id_playlist;
+
     }
 
     public function isPlaylistOwnedByUser(int $playlistId, int $userId): bool
@@ -228,6 +263,9 @@ class DeefyRepository{
         $stmt->execute(['id' => $id]);
         $data = $stmt->fetch(\PDO::FETCH_ASSOC);
         if (!$data) return null;
+
+        $_SESSION['playlist'] = $id;
+
 
         //On récupère toutes les pistes de playlist2track qui ont pour id_pl = $id   
         $tracks = $this->findAllTracksByIdPlaylist($id, true);
