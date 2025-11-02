@@ -29,6 +29,9 @@ class AuthnProvider {
             'email' => $user['email'],
             'role'  => isset($user['role']) ? (int)$user['role'] : 1
         ];
+
+        $_SESSION['playlist'] = -1;
+
     }
 
     public static function getSignedInUser(): array {
