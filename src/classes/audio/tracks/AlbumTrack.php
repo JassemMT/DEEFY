@@ -9,11 +9,11 @@ class AlbumTrack extends AudioTrack {
     protected int $annee;
     protected int $numero_piste;
 
-    public function __construct(string $titre, string $filename, string $album, int $numero_piste, string $artiste = "", int $annee = 0) {
+    public function __construct(string $titre, string $filename, string $album, int $numero_piste, ?string $artiste = "", ?int $annee = 0) {
         parent::__construct($titre, $filename);
         $this->album = $album;
         $this->numero_piste = $numero_piste;
-        $this->artiste = "";
+        $this->artiste = $artiste;
         $this->annee = 0;
     }
 

@@ -17,6 +17,7 @@ class AddPodcastTrackAction extends Action
     protected ?string $hostname = null;
     protected ?string $script_name = null;
 
+
     public function __construct()
     {
         $this->http_method = $_SERVER['REQUEST_METHOD'] ?? null;
@@ -106,9 +107,8 @@ class AddPodcastTrackAction extends Action
             $pl = $repo->findPlaylistById($playlistId);
             if (!$pl) return '<p>Playlist introuvable après ajout.</p>';
 
-            return (new \iutnc\deefy\render\AudioListRenderer($pl))->render()
-                 . '<p><a href="?action=add-podcast-track&id=' . $playlistId . '">Ajouter un autre podcast</a></p>';
-
+            header('Location: ?action=display-playlist&id=' . $_SESSION['playlist']);
+            exit;
         } catch (\Throwable $e) {
             return '<p>Erreur lors de l’enregistrement: ' . htmlspecialchars($e->getMessage()) . '</p>'
                  . $this->formulaire_ajout_podcast();
@@ -121,7 +121,8 @@ class AddPodcastTrackAction extends Action
                     <label>Titre : <input type="text" name="title" required></label><br>
                     <label>Auteur : <input type="text" name="author"></label><br>
                     <label>Durée (sec) : <input type="number" name="duration" min="0"></label><br>
-                    <label>Fichier audio (MP3) : <input type="file" name="userfile" accept=".mp3,audio/mpeg"></label><br>
+                    <label>Fichier audio (MP3) : <input type="file" name="userfile" accept=".mp3,audio/mpeg" required></label><br>
+                    <label>Date de publication : <input type="date" name="date"></label><br>
                     <button type="submit">Ajouter la piste</button>
                  </form>';
 

@@ -235,7 +235,7 @@ class DeefyRepository{
         $id_track = $this->pdo->lastInsertId();
 
         if ($id_playlist !== null) {
-            $stmt2 = $this->pdo->prepare("INSERT INTO playlist2track (id_pl, id_track) VALUES (:id_pl, :id_track)");
+            $stmt2 = $this->pdo->prepare("INSERT INTO playlist2track (id_pl, id_track, no_piste_dans_liste) VALUES (:id_pl, :id_track, 1)");
             $stmt2->execute(['id_pl' => $id_playlist, 'id_track' => $id_track]);
 
             /*
@@ -297,6 +297,7 @@ class DeefyRepository{
         ];
         return (int)$this->pdo->lastInsertId();
     }
+
 
 
 

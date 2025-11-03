@@ -7,10 +7,10 @@ class PodcastTrack extends AudioTrack {
     protected string $auteur;
     protected string $date;
 
-    public function __construct(string $titre, string $filename) {
+    public function __construct(string $titre, string $filename, string $auteur = "", string $date = "") {
         parent::__construct($titre, $filename);
-        $this->auteur = "";
-        $this->date = "";
+        $this->auteur = $auteur;
+        $this->date = $date;
     }
 
      public function __set(string $name, $value): void {

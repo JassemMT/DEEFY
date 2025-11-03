@@ -13,6 +13,7 @@ use iutnc\deefy\auth\AuthnProvider;
 
 class AddAudioTrackAction extends Action
 {
+
     public function execute(): string 
     {
         AuthnProvider::requireLogin();
@@ -101,21 +102,38 @@ class AddAudioTrackAction extends Action
                     return '<p>Erreur lors de l\'upload du fichier.</p>' . $this->formulaire_ajout_piste();
                 }
 
-                $src = $targetFilename;
-            }
+            $src = $targetFilename;
+            } else {
+            return '<p>Aucun fichier uploadé.</p>' . $this->formulaire_ajout_piste();
+        }
 
             // Si l'un des champs album/artiste/annee/numero est renseigné -> AlbumTrack
-            $isAlbum = $album !== '' || $artiste !== '' || $annee !== false || $numero_piste !== false;
 
-            if ($isAlbum) {
+             $hasAlbumInfo = ($album !== '') 
+                         || ($artiste !== '') 
+                         || ($annee !== false && $annee !== null) 
+                         || ($numero_piste !== false && $numero_piste !== null);
+
+
+            if ($hasAlbumInfo) {
                 // Valeurs par défaut pour constructeur AlbumTrack
                 $albumForCtor = $album !== '' ? $album : 'unknown';
                 $numeroForCtor = ($numero_piste !== false && $numero_piste !== null) ? (int)$numero_piste : 0;
+                $artisteVal = ($artiste !== '') ? $artiste : 'unknown_artist';
+                $anneeVal = ($annee !== false && $annee !== null) ? (int)$annee : 0;
+
 
                 // Constructeur AlbumTrack: titre, filename, album, numero_piste
-                $track = new AlbumTrack($title, $src, $albumForCtor, $numeroForCtor, $artiste, $annee);
+                $track = new AlbumTrack($title, $src, $albumForCtor, $numeroForCtor, $artisteVal, $anneeVal);
 
-                
+                // Setters magiques pour artiste et annee
+                if ($artisteVal !== '') {
+                    $track->artiste = $artisteVal;
+                }
+                if ($anneeVal > 0) {
+                    $track->annee = $anneeVal;
+                }
+
             } else {
                 // Constructeur AudioTrack: titre, filename
                 $track = new AudioTrack($title, $src);
@@ -142,14 +160,21 @@ class AddAudioTrackAction extends Action
             $repo = DeefyRepository::getInstance();
             $this->save_database($track);
             
-            $html .= (new AudioListRenderer($repo->findPlaylistById($playlist)))->render();
-            $html .= '<p><a href="?action=add-track">Ajouter encore une piste</a></p>';
+            //$html .= (new AudioListRenderer($repo->findPlaylistById($playlist)))->render();
+            //$html .= '<p><a href="?action=add-track">Ajouter encore une piste</a></p>';
+            //return $html;
 
-            
-
-            return $html;
+            header('Location: ?action=display-playlist&id=' . $_SESSION['playlist']);
+            exit;
         }
 
+       // $html .= $this->formulaire_ajout_piste();
+        // return $html;
+
+        
+
+
+        // 3. Afficher le formulaire (qui était déjà là)
         $html .= $this->formulaire_ajout_piste();
         return $html;
     }
@@ -167,7 +192,7 @@ class AddAudioTrackAction extends Action
                       <label>Année : <input type="number" name="annee" min="0"></label><br>
                       <label>Numéro dans l\'album : <input type="number" name="numero_piste" min="0"></label><br>
                     </fieldset>
-                    <label>Fichier audio (MP3) : <input type="file" name="userfile" accept=".mp3,audio/mpeg"></label><br>
+                    <label>Fichier audio (MP3) : <input type="file" name="userfile" accept=".mp3,audio/mpeg" required></label><br>
                     <button type="submit">Ajouter la piste</button>
                  </form>';
 
