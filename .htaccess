@@ -1,0 +1,3 @@
+<Files "config/config.db.ini">
+  Require all denied
+</Files>
